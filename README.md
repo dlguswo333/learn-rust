@@ -288,3 +288,208 @@ fn iter() {
 ```
 
 # Ownership
+`Ownership`이란 러스트를 다른 언어와 가장 구별되는 특징으로,
+러스트의 안전한 메모리 관리를 가능케 하는 컴파일 타임에 적용되는 메모리 관리 기법이다.
+
+러스트의 소유권의 **기본적인 세 가지 원칙**은 아래와 같다.
+- 메모리를 가리키는 변수를 owner (소유자)라고 한다.
+- 메모리는 동시에 최대 하나의 소유자만 존재한다.
+- 소유자가 스코프에서 사라지면, 소유자가 가리키는 메모리는 drop 된다.<br>
+  (C/C++에서 메모리를 unallocate 할 때 부르는 free를 러스트에서는 `drop`이라 표현한다.)
+
+## Copy와 Move, 그리고 Clone
+러스트에서 변수 하나를 다른 변수에 할당할 때,
+스택에서만 존재하는 데이터는 `Copy`를 수행하고,
+힙에서도 존재하는 데이터는 `Move`를 수행한다.
+
+```rust
+fn main() {
+    let a = 5;
+    let b = a;
+    let x = String::from("Hello");
+    let y = x;
+    println!("{}", a);
+    println!("{}", b);
+    // println!("{}", x); error. x is moved.
+    println!("{}", y);
+}
+```
+
+Integer 타입은 스택에만 데이터가 존재하기에 Assign 수행 시
+값을 Copy 하므로 소유권 이동이 일어나지 않는다.
+
+하지만 `String` 타입은 힙에 문자열 데이터가 존재하고 스택에 해당 힙의 포인터,
+문자열 길이, capacity 등의 데이터가 존재하기에 Move가 수행되므로 `let y = x;`
+수행 시 `x`의 소유권은 이전되었으므로 `x`는 사용할 수 없다.
+`메모리는 동시에 최대 하나의 소유자만 존재한다.` 라는 원칙을 지켜지는 것을
+여기서 확인할 수 있다.
+
+만일 `String` 타입의 변수를 힙 데이터까지 포함하여 `deep copy`하고 싶다면
+Clone을 수행하면 된다.
+
+```rust
+fn main() {
+    let a = 5;
+    let b = a.clone();
+    let x = String::from("Hello");
+    let y = x.clone();
+    println!("{}", a);
+    println!("{}", b);
+    println!("{}", x); // error. x is moved.
+    println!("{}", y);
+}
+```
+
+Integer 변수인 `a`는 스택에만 존재하며 사이즈가 컴파일 타임에 고정되어 있기에,
+러스트 입장에서는 `a`를 invalidate 할 필요가 없다. 다시 말해 해당 변수의
+`deep copy`와 `shallow copy`는 다를 이유가 하등 없으며,
+`a.clone()`은 Copy와 다르지 않다.
+
+Integer 타입과 같은 타입들은 `Copy trait`이 존재하며, 이러한 타입들은
+할당 후에도 원래 변수들은 여전히 유효하다.
+
+단, `Drop trait`이 정의돼 있거나 변수 내에 `Drop trait`이 정의된
+멤버가 있다면 `Copy trait`을 정의할 수 없다.
+
+`Copy` 타입 변수들은 아래와 같다.
+- Integer
+- Boolean
+- character
+- floating point
+- Tuple. 단 멤버들이 모두 `Copy`여야 함.
+
+## Ownership과 Function
+함수의 argument로 변수를 넘겨주는 것은 Assignment과 동일하게
+copy 또는 move를 수행한다.
+
+또한, 함수에서 값을 반환하는 것도 동일하게 소유권을 이전하게 된다.
+
+## Reference
+만약 callee에게 넘겨준 변수의 소유권을 다시 되돌려 받고 싶다면
+다시 해당 변수를 아래와 같이 반환 받으면 된다.
+
+```rust
+fn main() {
+    let s = String::from("Hello");
+    let (s, len) = calc_len(s);
+    println!("length of {} is {}", s, len);
+}
+
+fn calc_len(str: String) -> (String, usize) {
+    let len = str.len();
+    return (str, len);
+}
+```
+
+그러나 매번 이렇게 튜플로 다시 돌려받는 것은 너무 tedious (지루한, 싫증나는) 하다.
+이러한 번잡스러운 행위 없이 변수는 넘겨주되 소유권은 넘겨주지 않는 것,
+바로 `Reference`로서 넘겨주면 된다.
+
+```rust
+fn main() {
+    let s1 = String::from("Hello");
+    let len = calc_len(&s1);
+    println!("length of {} is {}", s1, len);
+}
+
+fn calc_len(s: &String) -> usize {
+    let len = s.len();
+    return len;
+}
+```
+
+`&` 기호를 타입 앞에 붙여줌으로써 오브젝트의 Reference만을 넘겨주게 된다.
+소유권을 넘겨받지 않았기에 해당 Reference는 함수 스코프 끝을 만나도
+Drop 되지 않는다. 이렇게 Reference로서 변수를 가져오는 것을
+`Borrowing`이라고 한다.
+
+![Reference](./img/reference.png)
+
+`borrow` 한 변수들도 `let` 변수와 마찬가지로 기본적으로 immutable하다.
+mutable한 Reference를 원한다면 `&mut` 키워드로 파라미터의 타입을
+선언하면 된다.
+
+> ⚠ 단, mutable reference의 대상이 될 변수도 mutable 해야 한다.
+
+하지면 mutable reference는 제한점이 존재하는데 그것은 아래와 같다.
+- 스코프에서 특정 데이터에 대한 mutable reference는 하나만 가능하다.
+
+따라서 아래와 같은 프로그램은 컴파일 에러가 발생한다.
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+    let s1= &mut s;
+    let s2= &mut s;
+    println!("{} {}", s1, s2);
+}
+```
+
+`s2`가 instantiate 되면 `s1`은 자동으로 invalid 된다.
+
+이러한 제약은 컴파일 타임에 `Race Condition`을 예방할 수 있도록 해준다.
+
+또한 **mutable Reference와 immutable reference는 공존할 수 없다.**
+immutable reference로는 값을 변경할 수 없기에
+immutable reference는 얼마든지 생성할 수 있다.
+
+## Dangling Reference
+이미 free 된 메모리를 가리키는 포인터를 Dangling pointer라고 하며,
+러스트에서는 언어적으로 이러한 Dangling Reference를 방지하고 있다.
+
+```rust
+fn main() {
+    let reference_to_nothing = dangle();
+}
+fn dangle() -> &String {
+    let s = String::from("hello");
+    &s
+}
+```
+
+위 코드에서 `dangle` 함수는 스코프 밖에서 drop 되었을 변수의
+reference를 반환하기에 컴파일 타임에 에러를 발생한다.
+reference를 반환하기 보다는 변수 그 자체를 반환하도록 함으로써
+에러를 피해갈 수 있다.
+
+> ⚠ lifetime을 지정함으로써 이 에러를 회피할 수 있다.
+
+## slice
+slice는 소유권을 포함하지 않은 또다른 데이터 타입이다.
+타입 자체는 immutable Reference와 같으며,
+slice는 전체보다는 특정 연속 부분만을 참조하게 하고 싶을 때
+쓰인다. 또한 slice는 해당 변수의 상태에 따라 유효성이 달라진다.
+
+```rust
+fn main() {
+    let s = String::from("Hello World");
+    let hello = &s[0..5];
+    let world = &s[6..11];
+    println!("{}", s);
+    println!("{}", hello);
+    println!("{}", world);
+}
+```
+
+참고로 slice에서 변수의 처음부터 참조한다면 시작 인덱스,
+또는 변수의 끝까지 참조한다면 마지막 인덱스는 생략 가능하다.
+따라서 `&s[..]`는 변수 전체를 가리키게 된다.
+
+slice가 immutable reference 타입이기에
+만약 변수의 데이터를 바꾸고자 한다면 컴파일 에러를 발생시킴으로써
+프로그램의 올바른 작동을 보장하게 된다.
+
+> ⚠ string literal도 slice이다.<br>
+> 따라서 literal은 변경 불가능하다.
+
+> ⚠ slice는 String을 넘어 array같은 타입에도 적용할 수 있다.
+
+```rust
+fn main() {
+    let a = [1, 2, 3];
+    let a1 = &a[..2];
+    for ele in a1 {
+        println!("{}", ele);
+    }
+}
+```
