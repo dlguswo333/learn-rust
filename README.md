@@ -141,6 +141,13 @@ unsigned signed에 따라 `u`와 `i`, 그리고 차지하는 비트 크기에 �
 **Unicode를 지원하기 위해 4바이트의 크기를 가진다**.
 따라서 한국어와 함께 이모지도 러스트의 Char 변수에 넣을 수 있다.
 
+### ()
+또 하나, 러스트에도 Null, None을 의미하는 타입이 있는데 바로 `()`이다.
+예를 들어 아무런 값을 반환하지 않는 함수의 반환값을 변수에 할당하면
+변수는 `()`라는 값을 가지게 된다.
+따라서 값을 가져야 하는 변수가 `()`를 가졌다면 값을 반환하지 않는 것은
+아닌지 확인하도록 하자.
+
 ***
 
 이 다음은 Compound 타입이다.
@@ -502,3 +509,56 @@ fn main() {
     }
 }
 ```
+
+# 유용한 타입들
+## Vec
+러스트의 Array는 위에서 설명한 것처럼 고정된 길이를 가지고 있다.
+C++의 Vector와 같은 가변 어레이도 당연히 러스트에 존재하는데,
+러스트에서는 `Vec` 또는 `VecDeque`라고 부른다.
+
+`VecDeque`는 Double Ended Queue이고, `Vec`은 일반적인
+가변 벡터이다. 러스트에서 간편하게 아래와 같이 매크로 펑션을 이용해
+Array에서 Vec을 생성할 수 있다.
+
+```rust
+fn main() {
+   let a = vec![1; 5];
+    println!("{:?}", a);
+}
+```
+
+## HashMap
+`HashMap`은 키를 통해 매칭된 밸류를 가져올 수 있는 데이터 구조이며,
+러스트에서는 키끼리, 밸류끼리 같은 데이터 타입이어야 한다.
+
+```rust
+use std::collections::HashMap;
+
+fn main() {
+    let mut m = HashMap::new();
+    m.insert("a", 20);
+    m.insert("b", 23);
+    println!("{:?}", m.get("a"));
+    println!("{}", m["b"]);
+}
+```
+
+## Some, None, 그리고 Option
+위 HashMap 파트의 코드를 실행했을 때 아래와 같은 결과를 볼 수 있다.
+
+```text
+Some(20)
+23
+```
+
+Some은 Option이라는 enum의 하나의 값이다. Option은 어느 특정 타입을
+의미하거나, 또는 아무것도 없음을 의미한다.
+HashMap에 가져오고자 하는 키가 없는 경우도 있기에 안전을 보장하고자
+밸류가 없을 수도 있음을 명시해야 한다. 그러나 러스트에서는
+Union Type이 없어서 대신 Option이라는 enum으로 대신하고 있다.
+
+Option은 `Some()` 또는 `None`이라는 값을 가지고 있다.
+어떤 값을 가지고 있는지는 `is_some()`, 또는 `is_none()`으로 체크할 수
+있으며, 또는 `unwrap()`으로 `None` 값을 가지고 있을 때는 패닉 에러를
+내뿜지만 원하고자 하는 값을 바로 얻을 수 있는 방법도 있다.
+또는 `unwrap_or(<DEFAULT VALUE>)`로 안전하게 unwrap하는 방법도 있다.
