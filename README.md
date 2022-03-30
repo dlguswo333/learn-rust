@@ -562,3 +562,91 @@ Option은 `Some()` 또는 `None`이라는 값을 가지고 있다.
 있으며, 또는 `unwrap()`으로 `None` 값을 가지고 있을 때는 패닉 에러를
 내뿜지만 원하고자 하는 값을 바로 얻을 수 있는 방법도 있다.
 또는 `unwrap_or(<DEFAULT VALUE>)`로 안전하게 unwrap하는 방법도 있다.
+
+## struct
+`struct`는 structured data structure로서,
+struct를 사용하면 각 데이터들에 고유의 이름을 주면서
+멤버 데이터들을 하나의 데이터 구조로 묶을 수 있게 된다.
+
+아래와 같이 struct를 정의하고 인스턴스화할 수 있다.
+
+```rust
+struct Person {
+    name: String,
+    age: i32,
+}
+
+fn main() {
+    let alice = Person {
+        name: String::from("alice"),
+        age: 16,
+    };
+    println!("{} {}", alice.name, alice.age);
+}
+```
+
+러스트에서 struct의 method를 정의하는 법은 아래와 같다.
+
+```rust
+struct Person {
+    name: String,
+    age: i32,
+}
+
+impl Person {
+    pub fn new() -> Self {
+        Self {
+            name: "bob".to_owned(),
+            age: 1,
+        }
+    }
+}
+
+fn main() {
+    let alice = Person {
+        name: String::from("alice"),
+        age: 16,
+    };
+    println!("{} {}", alice.name, alice.age);
+    let bob = Person::new();
+    println!("{}", bob);
+}
+```
+
+그러나 위 코드는 Person이 display formatter `{}`이
+의존하는 **trait**을 구현하지 않았기에 에러가 발생한다.
+
+# Trait
+`Trait`은 자바스크립트의 [`mixin`](https://javascript.info/mixins)과 비슷하다.
+Trait은 데이터에 특정 behavior을 구현하는 하나의 방법으로
+러스트에서 중요한 부분 중 하나이다.
+
+위 코드의 `Person`의 **Display Trait**은 아래와 같이 구현할 수 있다.
+
+```rust
+impl std::fmt::Display for Person {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.name, self.age)
+    }
+}
+```
+위 코드를 추가하면 문제 없이 컴파일되고 실행하는 것을 확인할 수 있다.
+
+> 추가로 각 Trait에는 일반적인 기본적인 구현을 유추할 수 있을텐데,
+> 예를 들어 위 Person의 Display Trait은 각 멤버와 그 밸류를 출력하는 것이 기대되는 Trait이라 생각할 수 있다.
+> 러스트도 가능한데, 아래와 같이 `Debug` Trait의 Default 구현을
+> 이끌어 낼 수 있으며 코드를 써서 구현할 필요 없이 실행할 수 있다.
+> (`{:?}`가 Debug Trait에 의존하는 Formatter이다.)
+
+```rust
+#[derive(Debug)]
+struct Person {
+    name: String,
+    age: i32,
+}
+
+fn main() {
+    let bob = Person::new();
+    println!("{:?}", bob);
+}
+```
