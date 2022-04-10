@@ -205,7 +205,7 @@ let array = [3; 5];
 러스트의 함수는 `fn` 키워드로 선언이 시작되며, 파라미터는 항상 타입을 명시해야 하며,
 리턴 타입은 함수 블록 시작 전 `->`로 명시할 수 있다.
 
-> ❗ Parameter는 함수 선언의 변수를, Argument는 함수를 부를 때<br>
+> ⚠️ Parameter는 함수 선언의 변수를, Argument는 함수를 부를 때<br>
 > 명시된 값을 의미하지만 보통 이 두 단어를 섞어 부른다.
 
 # if 문
@@ -303,7 +303,7 @@ fn iter() {
 러스트의 소유권의 **기본적인 세 가지 원칙**은 아래와 같다.
 - 메모리를 가리키는 변수를 owner (소유자)라고 한다.
 - 메모리는 동시에 최대 하나의 소유자만 존재한다.
-- 소유자가 스코프에서 사라지면, 소유자가 가리키는 메모리는 drop 된다.<br>
+- 소유자가 스코프에서 사라지면, 소유자가 가리키는 메모리는 자동으로 drop 된다.<br>
   (C/C++에서 메모리를 unallocate 할 때 부르는 free를 러스트에서는 `drop`이라 표현한다.)
 
 ## Copy와 Move, 그리고 Clone
@@ -399,7 +399,7 @@ fn calc_len(str: String) -> (String, usize) {
 ```
 
 그러나 매번 이렇게 튜플로 다시 돌려받는 것은 너무 tedious (지루한, 싫증나는) 하다.
-이러한 번잡스러운 행위 없이 변수는 넘겨주되 소유권은 넘겨주지 않는 것,
+이러한 번잡스러운 행위가 싫다면 변수는 넘겨주되 소유권은 넘겨주지 않는 방법,
 바로 `Reference`로서 넘겨주면 된다.
 
 ```rust
@@ -415,8 +415,8 @@ fn calc_len(s: &String) -> usize {
 }
 ```
 
-`&` 기호를 타입 앞에 붙여줌으로써 오브젝트의 Reference만을 넘겨주게 된다.
-소유권을 넘겨받지 않았기에 해당 Reference는 함수 스코프 끝을 만나도
+`&` 기호를 타입 앞에 붙여줌으로써 **오브젝트의 Reference만**을 넘겨주게 된다.
+소유권을 넘겨받지 않았기에 해당 Reference는 callee 함수 스코프의 끝을 만나도
 Drop 되지 않는다. 이렇게 Reference로서 변수를 가져오는 것을
 `Borrowing`이라고 한다.
 
@@ -426,7 +426,7 @@ Drop 되지 않는다. 이렇게 Reference로서 변수를 가져오는 것을
 mutable한 Reference를 원한다면 `&mut` 키워드로 파라미터의 타입을
 선언하면 된다.
 
-> ❗ 단, mutable reference의 대상이 될 변수도 mutable 해야 한다.
+> ⚠️ 단, mutable reference의 대상이 될 변수도 mutable 해야 한다.
 
 하지면 mutable reference는 제한점이 존재하는데 그것은 아래와 같다.
 - 스코프에서 특정 데이터에 대한 mutable reference는 하나만 가능하다.
@@ -469,7 +469,7 @@ reference를 반환하기에 컴파일 타임에 에러를 발생한다.
 reference를 반환하기 보다는 변수 그 자체를 반환하도록 함으로써
 에러를 피해갈 수 있다.
 
-> ❗ lifetime을 지정함으로써 이 에러를 회피할 수 있다.
+> ⚠️ lifetime을 지정함으로써 이 에러를 회피할 수 있다.
 
 ## slice
 slice는 소유권을 포함하지 않은 또다른 데이터 타입이다.
@@ -496,9 +496,9 @@ slice가 immutable reference 타입이기에
 만약 변수의 데이터를 바꾸고자 한다면 컴파일 에러를 발생시킴으로써
 프로그램의 올바른 작동을 보장하게 된다.
 
-> ❗ string literal도 slice이므로 literal도 변경 불가능하다.
+> ⚠️ string literal도 slice이므로 literal도 변경 불가능하다.
 
-> ❗ slice는 String뿐만 아니라 array 타입에도 아래와 같이 적용할 수 있다.
+> ⚠️ slice는 String뿐만 아니라 array 타입에도 아래와 같이 적용할 수 있다.
 
 ```rust
 fn main() {
@@ -568,6 +568,10 @@ Option은 `Some()` 또는 `None`이라는 값을 가지고 있다.
 struct를 사용하면 각 데이터들에 고유의 이름을 주면서
 멤버 데이터들을 하나의 데이터 구조로 묶을 수 있게 된다.
 
+> ⚠️ 러스트에서 기본적으로 모든 것은 private이다.
+> 따라서 `struct`이든 `method`이든 다른 파일 또는 바깥 스코프에서
+> 사용하고 싶다면 `pub` 키워드를 붙여야 한다.
+
 아래와 같이 struct를 정의하고 인스턴스화할 수 있다.
 
 ```rust
@@ -588,11 +592,55 @@ fn main() {
 러스트에서 struct의 method를 정의하는 법은 아래와 같다.
 
 ```rust
-struct Person {
-    name: String,
-    age: i32,
+impl Person {
+    pub fn new() -> Self {
+        Self {
+            name: "bob".to_owned(),
+            age: 1,
+        }
+    }
+    pub fn get_age(&self) -> i32 {
+        self.age
+    }
+}
+```
+아래 `get_age` 메소드와 같이 자신을 참조할 수 있어야 한다면
+마치 Python과 같이 첫번째 인자로 `&self`로 주면 자기 자신
+또는 멤버를 참조할 수 있다.
+
+> ⚠️ `&self`가 아닌 `self`로 첫번째 인자를 줄 수도 있지만
+> 그렇게 되면 해당 멤버 메소드에게 인스턴스의 소유권이 넘어가
+> 멤버 메소드의 끝을 만나게 되면 인스턴스가 드랍된다.
+
+만약 인스턴스의 멤버 변수를 변경하고 싶다면 아래와 같이
+self를 받는 인자에 `mut`을 붙이고 인스턴스를 저장하는 변수에도
+`mut`을 붙여주면 된다.
+
+```rust
+impl Person {
+    pub fn new() -> Self {
+        Self {
+            name: "bob".to_owned(),
+            age: 1,
+        }
+    }
+    pub fn set_age(&mut self, new_age: i32) {
+        self.age = new_age;
+    }
 }
 
+fn main() {
+    let mut bob = Person::new();
+    println!("{:?}", bob);
+    bob.set_age(18);
+    println!("{}", bob.age);
+}
+```
+
+또 하나의 예로 아래와 같이 클래스의 새 인스턴스를 만드는 메소드를
+들 수 있다.
+
+```rust
 impl Person {
     pub fn new() -> Self {
         Self {
@@ -609,12 +657,12 @@ fn main() {
     };
     println!("{} {}", alice.name, alice.age);
     let bob = Person::new();
-    println!("{}", bob);
+    println!("{}", bob); //Error!
 }
 ```
 
 그러나 위 코드는 Person이 display formatter `{}`이
-의존하는 **trait**을 구현하지 않았기에 에러가 발생한다.
+의존하는 Display **Trait**을 구현하지 않았기에 에러가 발생한다.
 
 # Trait
 `Trait`은 자바스크립트의 [`mixin`](https://javascript.info/mixins)과 비슷하다.
@@ -632,9 +680,11 @@ impl std::fmt::Display for Person {
 ```
 위 코드를 추가하면 문제 없이 컴파일되고 실행하는 것을 확인할 수 있다.
 
-> 추가로 각 Trait에는 일반적인 기본적인 구현을 유추할 수 있을텐데,
-> 예를 들어 위 Person의 Display Trait은 각 멤버와 그 밸류를 출력하는 것이 기대되는 Trait이라 생각할 수 있다.
-> 러스트도 가능한데, 아래와 같이 `Debug` Trait의 Default 구현을
+> 추가로 각 Trait에는 일반적으로 기대되는 구현 방식이 있을 수 있다,
+> 예를 들어 위 Person의 Display Trait은 각 멤버와 그 밸류를 출력하는 것이
+> 일반적으로 기대하는 Trait의 구현으로 볼 수 있다.
+> 아래와 같이 `Debug` Trait의 Default 구현을 struct 코드 위에
+> `#[derive(Debug)]`를 추가함으로써
 > 이끌어 낼 수 있으며 코드를 써서 구현할 필요 없이 실행할 수 있다.
 > (`{:?}`가 Debug Trait에 의존하는 Formatter이다.)
 
