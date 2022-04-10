@@ -663,6 +663,38 @@ fn main() {
 
 그러나 위 코드는 Person이 display formatter `{}`이
 의존하는 Display **Trait**을 구현하지 않았기에 에러가 발생한다.
+이에 대한 자세한 설명은 [Trait](#trait) 섹션을 참조하자.
+
+## Enum
+enum은 범위가 한정적이거나 특정한 값만을 받을 때 유용하게
+쓸 수 있는 자료구조다. 러스트에서 enum은 아래와 같이 정의하며
+사용할 수 있다.
+
+```rust
+enum Greek {
+    Alpha,
+    Beta,
+    Gamma,
+}
+
+impl std::fmt::Display for Greek {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let greek_in_string = match self {
+            Greek::Alpha => "Alpha",
+            Greek::Beta => "Beta",
+            Greek::Gamma => "Gamma",
+        };
+        write!(f, "{}", greek_in_string)
+    }
+}
+
+fn main() {
+    let site_a: Greek = Greek::Alpha;
+    let site_b: Greek = Greek::Beta;
+    let site_c: Greek = Greek::Gamma;
+    println!("{} {} {}", site_a, site_b, site_c);
+}
+```
 
 # Trait
 `Trait`은 자바스크립트의 [`mixin`](https://javascript.info/mixins)과 비슷하다.
