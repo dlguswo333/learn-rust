@@ -1,12 +1,14 @@
 러스트 공부를 위한 기록용 리포지토리입니다.
 
 # 리소스 참고 웹페이지
-- https://edu.anarcho-copy.org/Programming%20Languages/Rust/rust-programming-language-steve-klabnik.pdf<br>
+- <https://edu.anarcho-copy.org/Programming%20Languages/Rust/rust-programming-language-steve-klabnik.pdf><br>
     러스트를 배우고자 하는 사람들은 한 번씩은 찾는다는 그 `The Rust Programming Language` 책의 PDF.
-- https://javascriptweekly.com/link/120318/7b14d2bdbf<br>
+- <https://javascriptweekly.com/link/120318/7b14d2bdbf><br>
     JS 개발자들을 위한 러스트 학습용 PDF. 166페이지로 짧은 시간 내에 부담 없이 배우기 좋을 듯 싶다.
-- https://parksb.github.io/article/35.html<br>
+- <https://parksb.github.io/article/35.html><br>
     러스트에 대한 내용을 장점 위주로 한국어로 요약한 페이지.
+- <https://rust-lang-nursery.github.io/rust-cookbook/><br>
+    일반적이고 자주 쓰일만한 프로그램 로직의 러스트 예제 코드를 모아둔 페이지.
 
 # 러스트 설치하기
 brew나 apt에서도 러스트를 설치할 수 있으나, 최신 버전 업데이트가 많이 느리고 러스트 공식 책에서도 권장하고 있지 않다.
@@ -93,8 +95,8 @@ const가 let과 구별되는 특징은 다음과 같다.
 
 ```rust
 fn main() {
-    let a=3;
-    let a=a.to_string();
+    let a = 3;
+    let a = a.to_string();
     println!("{}", a);
 }
 ```
@@ -319,7 +321,7 @@ fn main() {
     let y = x;
     println!("{}", a);
     println!("{}", b);
-    // println!("{}", x); error. x is moved.
+    println!("{}", x); // Error! x is moved.
     println!("{}", y);
 }
 ```
@@ -352,7 +354,7 @@ fn main() {
     let y = x.clone();
     println!("{}", a);
     println!("{}", b);
-    println!("{}", x); // error. x is moved.
+    println!("{}", x); // No error.
     println!("{}", y);
 }
 ```
@@ -381,7 +383,7 @@ copy 또는 move를 수행한다.
 
 또한, 함수에서 값을 반환하는 것도 동일하게 소유권을 이전하게 된다.
 
-## Reference
+## Reference &
 만약 callee에게 넘겨준 변수의 소유권을 다시 되돌려 받고 싶다면
 다시 해당 변수를 아래와 같이 반환 받으면 된다.
 
@@ -426,9 +428,9 @@ Drop 되지 않는다. 이렇게 Reference로서 변수를 가져오는 것을
 mutable한 Reference를 원한다면 `&mut` 키워드로 파라미터의 타입을
 선언하면 된다.
 
-> ⚠️ 단, mutable reference의 대상이 될 변수도 mutable 해야 한다.
+> ⚠️ 단, mutable reference의 대상이 될 변수도 mut 키워드로 정의되어야 한다.
 
-하지면 mutable reference는 제한점이 존재하는데 그것은 아래와 같다.
+하지면 mutable reference는 하나의 큰 제약이 존재하는데 그것은 아래와 같다.
 - 스코프에서 특정 데이터에 대한 mutable reference는 하나만 가능하다.
 
 따라서 아래와 같은 프로그램은 컴파일 에러가 발생한다.
@@ -436,18 +438,19 @@ mutable한 Reference를 원한다면 `&mut` 키워드로 파라미터의 타입�
 ```rust
 fn main() {
     let mut s = String::from("hello");
-    let s1= &mut s;
-    let s2= &mut s;
+    let s1 = &mut s;
+    let s2 = &mut s;
     println!("{} {}", s1, s2);
 }
 ```
 
-`s2`가 instantiate 되면 `s1`은 자동으로 invalid 된다.
+`s2`가 instantiate 되면 `s1`은 자동으로 invalid 되며
+이러한 제약은 컴파일 타임에 데이터 `Race Condition`을 예방할 수 있게 해준다.
 
-이러한 제약은 컴파일 타임에 `Race Condition`을 예방할 수 있도록 해준다.
+⭐ 또한 **mutable reference와 immutable reference는 공존할 수 없다.**
+immutable reference를 사용 중에 값이 변하는 것을 제한하기 위해서이다.
 
-또한 **mutable Reference와 immutable reference는 공존할 수 없다.**
-immutable reference로는 값을 변경할 수 없기에
+그 대신 immutable reference로는 값을 변경할 수 없기에
 immutable reference는 얼마든지 생성할 수 있다.
 
 ## Dangling Reference
@@ -470,6 +473,7 @@ reference를 반환하기 보다는 변수 그 자체를 반환하도록 함으�
 에러를 피해갈 수 있다.
 
 > ⚠️ lifetime을 지정함으로써 이 에러를 회피할 수 있다.
+> 이는 추후에 설명하도록 하겠다.
 
 ## slice
 slice는 소유권을 포함하지 않은 또다른 데이터 타입이다.
@@ -563,6 +567,37 @@ Option은 `Some()` 또는 `None`이라는 값을 가지고 있다.
 내뿜지만 원하고자 하는 값을 바로 얻을 수 있는 방법도 있다.
 또는 `unwrap_or(<DEFAULT VALUE>)`로 안전하게 unwrap하는 방법도 있다.
 
+```rust
+fn main() {
+    let s = Some("foo");
+    let n: Option<&str> = None;
+
+    if s.is_some() {
+        println!("s is Some.");
+    }
+    if s.is_none() {
+        println!("s is None.");
+    }
+    println!("{}", s.unwrap_or("default"));
+    println!("{}", s.unwrap());
+
+    if n.is_some() {
+        println!("n is Some.");
+    }
+    if n.is_none() {
+        println!("n is None.");
+    }
+    println!("{}", n.unwrap_or("default"));
+    println!("{}", n.unwrap());
+}
+// s is Some.
+// foo
+// foo
+// n is None.
+// default
+// thread 'main' panicked at 'called `Option::unwrap()`
+```
+
 ## struct
 `struct`는 structured data structure로서,
 struct를 사용하면 각 데이터들에 고유의 이름을 주면서
@@ -573,6 +608,7 @@ struct를 사용하면 각 데이터들에 고유의 이름을 주면서
 > 사용하고 싶다면 `pub` 키워드를 붙여야 한다.
 
 아래와 같이 struct를 정의하고 인스턴스화할 수 있다.
+각 멤버 변수 정의 사이에 `;`가 아닌 `,`가 구분자로 들어가는 것에 주의하자.
 
 ```rust
 struct Person {
@@ -587,6 +623,18 @@ fn main() {
     };
     println!("{} {}", alice.name, alice.age);
 }
+```
+
+위 각 멤버 변수에 이름을 주는 식으로 정의된 struct를
+`classic struct` 또는 `classic C struct`라고 한다.
+
+또는 마치 tuple과 같이 struct를 정의할 수도 있다.
+이러한 struct를 `tuple struct` 또는 `named tuple`이라고 한다.
+각 멤버 변수를 접근하는 방법은 tuple과 같이
+`<struct>.<index>`로 접근할 수 있다.
+
+```rust
+struct FullName(String, String);
 ```
 
 러스트에서 struct의 method를 정의하는 법은 아래와 같다.
