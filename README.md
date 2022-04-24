@@ -216,6 +216,48 @@ let array = [3; 5];
 만약 if 문을 Expression으로 쓰고 싶은 경우 각 if와 else if 문이 반환하는 값의 타입은
 동일해야 함을 기억하자.
 
+# match 문
+매치는 주어진 값이 해당하는 패턴과 일치할 때 패턴에 매칭된 구문을 실행한다.
+
+```rust
+fn main() {
+    let fruits = vec!["banana", "apple", "coconut", "orange", "strawberry"];
+    for &index in [0, 2, 99].iter() {
+        match fruits.get(index) {
+            Some(&"coconut") => println!("Coconuts are awesome!!!"),
+            Some(fruit_name) => println!("It's a delicious {}!", fruit_name),
+            None => println!("There is no fruit! :("),
+        }
+    }
+}
+```
+
+두번째 브랜치에서 변수 **`fruit_name`**이 패턴 내부에 정의되고 매칭된 코드 블럭에서
+해당 변수를 쓸 수 있는 점에 주목하자. 이렇게 브랜치의 코드 블럭 내부에서만
+사용 가능한 변수를 쉽게 생성할 수 있다.
+
+매치를 사용할 시 다음과 같은 주의사항이 있다.
+- 모든 가능한 값들을 처리할 수 있어야 한다. 그렇지 않을 시 컴파일 타임 에러가 발생한다.
+- 매치 브랜치는 위에서부터 해석되고 하나만 실행되기에 특이 케이스들을 위 쪽에 정의해야 한다.
+
+만약 남은 케이스들에 대해 한 번에 처리하고 싶다면 와일드카드 `_`, 언더스코어 문자를 사용해
+맨 밑에 브랜치를 정의하면 된다.
+
+## if let
+match를 사용하여 일일히 모든 패턴에 대해 처리하고 싶지 않다면
+`if let`으로 하나의 패턴에 대해서만 처리할 수 있다. if let을 사용하여
+패턴과 일치하는 경우에만 변수를 생성함과 동시에
+뒤에 달려오는 코드가 실행되게 할 수 있다.
+
+```rust
+fn main() {
+    let a_number: Option<u8> = Some(7);
+    if let Some(number) = a_number {
+        println!("{} is my lucky number!", number);
+    }
+}
+```
+
 # 반복문
 러스트에는 세 가지의 반복문 (iteration)이 존재한다: `loop`, `while`, `for`.
 
@@ -559,8 +601,8 @@ Some(20)
 23
 ```
 
-Some은 Option이라는 enum의 하나의 값이다. Option은 어느 특정 타입을
-의미하거나, 또는 아무것도 없음을 의미한다.
+Some은 Option이라는 enum의 하나의 값이다. Option은 어느 특정 값과
+또는 아무것도 없음 둘 다를 표현하고 싶을 때 쓰인다.
 HashMap에 가져오고자 하는 키가 없는 경우도 있기에 안전을 보장하고자
 밸류가 없을 수도 있음을 명시해야 한다. 그러나 러스트에서는
 Union Type이 없어서 대신 Option이라는 enum으로 대신하고 있다.
@@ -594,6 +636,8 @@ fn main() {
     println!("{}", n.unwrap_or("default"));
     println!("{}", n.unwrap());
 }
+// Program Ouput:
+//
 // s is Some.
 // foo
 // foo
@@ -601,6 +645,16 @@ fn main() {
 // default
 // thread 'main' panicked at 'called `Option::unwrap()`
 ```
+
+다른 언어와 비교하자면, 자바로 쓰여진 String 타입의 파라미터를 받는
+함수가 있다고 하자. 해당 파라미터에는 String 타입 뿐만 아니라,
+`null`도 들어갈 수 있다. 하지만 러스트는 이 둘을 엄격하게 구분하기에
+만약 아무 것도 없을 수도 있는 String을 받고 싶다면
+파라미터의 타입을 `Option<String>`으로 명시해야 한다.
+
+> ⚠️ `Some`과 `None`은 `Option` enum이 가질 수 있는 하나의 값이지,
+> 그 자체로 타입이 아니다. 따라서 변수의 타입으로 `Some<T>`는 불가능하지만,
+> `Option<T>`는 가능한 것이다.
 
 ## struct
 `struct`는 structured data structure로서,
@@ -782,5 +836,67 @@ struct Person {
 fn main() {
     let bob = Person::new();
     println!("{:?}", bob);
+}
+```
+
+# 에러 처리
+에러는 유저 인풋, 파일, 네트워크 등이 프로그램이 기대하는 바와 다를 때
+발생하며, 러스트는 이러한 에러에 대한 여러 가지 핸들링 방식이 존재한다.
+위에서 배운 바와 같이 기본적으로 러스트는 존재하지 않을 수도 있는 값을
+나타내기 위해 `Option`란라는 enum을 사용한다.
+
+## panic! 매크로
+`panic!` 매크로 함수는 함수를 실행하는 쓰레드의를 패닉 시킬 수 있다.
+panic! 매크로 함수를 부르면 프로그램은 에러 메시지를 출력하고
+리소스를 해제하며 반환값으로 `101`을 리턴한다.
+
+## unwrap
+`Option<T>`와 같은 타입의 변수가 `val.unwrap()`을 실행하면
+`Some<T>`일 때에만 Some이 벗겨지고 내부의 값을 반환한다.
+만약 `None`이라면 패닉이 발생한다.
+
+## expect
+위의 `unwrap`과 동일한 명령을 수행하지만,
+인자로 커스텀 에러 메시지를 입력할 수 있다.
+
+```rust
+fn main() {
+    let val: Option<i32> = None;
+    println!("{}", val.expect("hello?"));
+}
+// Program Ouput:
+//
+// thread 'main' panicked at 'hello?', match.rs:3:24
+```
+
+## Result
+`Result<T, E>` enum은 값 또는 에러를 반환할 수 있는 타입이다.
+러스트 컨벤션 상 `Ok(T)`는 원하는 값을 내포하며,
+`Err(E)`는 에러 값을 의미한다.
+
+`Option` enum과 다른 점은 **Option은 값이 없을 수도 있음**을 의미하지만,
+**Result는 에러가 발생할 수 있음**을 나타내기 위해 존재한다는 점이다.
+
+Result도 `unwrap`과 `expect` 메소드 함수를 가지고 있는데,
+`Ok`라면 내부 값을 반환하지만 `Err`라면 프로그램 패닉이 발생한다.
+
+Result 예제 코드는 아래와 같다.
+
+```rust
+#[derive(Debug)]
+struct DivisionByZeroError;
+
+fn safe_division(dividend: f64, divisor: f64) -> Result<f64, DivisionByZeroError> {
+    if divisor == 0.0 {
+        Err(DivisionByZeroError)
+    } else {
+        Ok(dividend / divisor)
+    }
+}
+
+fn main() {
+    println!("{:?}", safe_division(9.0, 3.0));
+    println!("{:?}", safe_division(4.0, 0.0));
+    println!("{:?}", safe_division(0.0, 2.0));
 }
 ```
