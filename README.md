@@ -518,6 +518,68 @@ reference를 반환하기 보다는 변수 그 자체를 반환하도록 함으�
 > ⚠️ lifetime을 지정함으로써 이 에러를 회피할 수 있다.
 > 이는 추후에 설명하도록 하겠다.
 
+## Lifetime
+`lifetime`이란 메모리가 유효한 시간을 말하는 것이다.
+위 [dangling-reference](#dangling-reference)에서
+함수 `dangle`에서 `s`를 반환하는데 함수 밖에서는 `s`의
+lifetime이 끝났으므로 러스트는 이 코드는 에러를 발생하리라
+유추할 수 있다.
+
+그러나 러스트가 항상 lifetime을 예측할 수 있는 것은 아니다.
+```rust
+fn main() {
+    let magic1 = String::from("abracadabra!");
+    let magic2 = String::from("shazam!");
+
+    let result = get_short_string(&magic1, &magic2);
+    println!("The shorter magic word is {}", result);
+}
+
+fn get_short_string(x: &String, y: &String) -> &String {
+    if x.len() > y.len() {
+        y
+    } else {
+        x
+    }
+}
+```
+
+위 코드의 `get_short_string`는 `x`와 `y` 두 변수 중 길이가
+짧은 것을 반환하므로 컴파일 타임에 lifetime을 예측할 수 없다.
+어느 변수가 파라미터로 오느냐에 따라서 매번 반환값이 달라질 수 있기 때문이다.
+따라서 러스트는 위 코드의 컴파일을 거부한다.
+
+따라서 우리는 함수 정의에 lifetime을 지정해야 한다.
+**generic lifetime parameter**를 함수 정의식에 포함할 수 있는데
+위 main 함수에서 `magic1`과 `magic2`는 같은 lifetime을 가지고 있으므로
+`x` `y` 두 변수에 같은 lifetime을 지정해주자.
+
+```rust
+fn get_short_string<'a>(x: &'a String, y: &'a String) -> &'a String {
+    ...
+}
+```
+
+generic lifetime은 `'`으로 시작해야 러스트가 lifetime specifier임을
+인식할 수 있다.
+
+lifetime specifier는 함수 뿐만 아니라 `struct`에도 적용할 필요가 있다.
+struct 또는 enum이 reference 타입의 프로퍼티를 가지고 있다면 **반드시**
+lifetime을 명시해주어야 한다. 이러한 명시로 해당 프로퍼티의 lifetime이 끝나면
+struct 또는 enum도 lifetime이 끝날 수 있게 된다.
+
+
+```rust
+#[derive(Debug)]
+struct Container<'a>(&'a str);
+
+fn main() {
+    let text = String::from("Lorem ipsum");
+    let container = Container(&text);
+    println!("{:?}", container);
+}
+```
+
 ## slice
 slice는 소유권을 포함하지 않은 또다른 데이터 타입이다.
 타입 자체는 immutable Reference와 같으며,
