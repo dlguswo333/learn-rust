@@ -878,15 +878,16 @@ impl std::fmt::Display for Person {
     }
 }
 ```
+
 위 코드를 추가하면 문제 없이 컴파일되고 실행하는 것을 확인할 수 있다.
 
-> 추가로 각 Trait에는 일반적으로 기대되는 구현 방식이 있을 수 있다,
-> 예를 들어 위 Person의 Display Trait은 각 멤버와 그 밸류를 출력하는 것이
-> 일반적으로 기대하는 Trait의 구현으로 볼 수 있다.
-> 아래와 같이 `Debug` Trait의 Default 구현을 struct 코드 위에
-> `#[derive(Debug)]`를 추가함으로써
-> 이끌어 낼 수 있으며 코드를 써서 구현할 필요 없이 실행할 수 있다.
-> (`{:?}`가 Debug Trait에 의존하는 Formatter이다.)
+추가로 각 Trait에는 일반적으로 기대되는 구현 방식이 있을 수 있다,
+예를 들어 위 Person의 Display Trait은 각 멤버와 그 밸류를 출력하는 것이
+일반적으로 기대하는 Trait의 구현으로 볼 수 있다.
+아래와 같이 struct 코드 위에 `#[derive(Debug)]`를 추가함으로써
+`Debug` Trait의 Default 구현을 이끌어 낼 수 있으며 코드를 써서
+구현할 필요 없이 실행할 수 있다.
+(`{:?}`가 Debug Trait에 의존하는 Formatter이다.)
 
 ```rust
 #[derive(Debug)]
@@ -900,6 +901,63 @@ fn main() {
     println!("{:?}", bob);
 }
 ```
+
+## 커스텀 trait
+Display, Debug 뿐만 아니라 커스텀 trait을 구현할 수도 있다.
+아래와 같이 trait의 이름을 정의하는데 블록 내부에
+해당 trait을 구현할 데이터 타입들이 구현에 쓸 메소드를
+명시해줘야 한다.
+
+```rust
+trait Centimeter {
+    fn get_centimeter(&self) -> f64;
+}
+```
+
+이제 `Centimeter` trait을 구현해야할 타입들은 메소드
+`get_centimeter(&self) -> f64` 메소드를 구현해야 한다.
+
+```rust
+struct Millimeter {
+    length: f64,
+}
+
+impl Centimeter for Millimeter {
+    fn get_centimeter(&self) -> f64 {
+        self.length * 0.1
+    }
+}
+
+fn main() {
+    let a=Millimeter{length: 10.4_f64};
+    println!("{}", a.get_centimeter());
+}
+```
+
+## 타입 impl trait
+함수의 매개 변수로 특정 trait을 구현한 타입을 명시할 수도 있다.
+```rust
+fn get_centimeter(param: &impl Centimeter) -> f64 {
+    param.get_centimeter()
+}
+
+fn main() {
+    let a = Millimeter { length: 10.4_f64 };
+    println!("{}", get_centimeter(&a));
+}
+```
+
+또는 generic type을 사용하여 특정 trait을 구현한 타입을
+명시할 수도 있다. 이 방식을 **trait bound**라고 한다.
+
+```rust
+fn get_centimeter<T: Centimeter>(param: &T) -> f64 {
+    param.get_centimeter()
+}
+```
+
+만약 여러 trait을 구현한 타입을 받고 싶다면
+`<T: PartialEq + Debug>`와 같이 `+`로 trait을 구분하면 된다.
 
 # 에러 처리
 에러는 유저 인풋, 파일, 네트워크 등이 프로그램이 기대하는 바와 다를 때
@@ -962,3 +1020,12 @@ fn main() {
     println!("{:?}", safe_division(0.0, 2.0));
 }
 ```
+
+# Generic type
+러스트에서 generic type은 C++과 비슷한 문법을 가진다.
+에를 들어 struct 선언 시 이름 뒤에 `<Generic_Type>`을 붙여주면 된다.
+```rust
+struct Type<T, U> {
+    a: T,
+    b: U
+}
