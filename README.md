@@ -207,7 +207,7 @@ let array = [3; 5];
 러스트의 함수는 `fn` 키워드로 선언이 시작되며, 파라미터는 항상 타입을 명시해야 하며,
 리턴 타입은 함수 블록 시작 전 `->`로 명시할 수 있다.
 
-> ⚠️ Parameter는 함수 선언의 변수를, Argument는 함수를 부를 때<br>
+> ⚠️ Parameter는 함수 선언에서의 변수를, Argument는 함수를 부를 때<br>
 > 명시된 값을 의미하지만 보통 이 두 단어를 섞어 부른다.
 
 # if 문
@@ -901,6 +901,10 @@ fn main() {
     println!("{:?}", bob);
 }
 ```
+
+> ⚠️ `#[derive(Debug)]`와 같은 마치
+> C의 매크로와 같은 러스트 신택스를 **Attribute**라고 한다.<br>
+> [rust-lagn doc 링크](https://doc.rust-lang.org/reference/attributes.html)
 
 ## 커스텀 trait
 Display, Debug 뿐만 아니라 커스텀 trait을 구현할 수도 있다.
